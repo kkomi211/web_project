@@ -35,12 +35,18 @@
         methods: {
             fnLogin(){
                 let self = this;
-				fetch(`http://localhost:3000/student/${self.info.stuNo}/${self.info.stuName}`)
+				fetch("http://localhost:3000/student/login",{
+                    method : "POST",
+                    headers : {
+                        "Content-type" : "application/json"   
+                    },
+                    body : JSON.stringify(self.info)
+                })
                     .then( res => res.json() )
                     .then( data => {
                         console.log(data);
                         if(data.result == "success"){
-                            alert("로그인 성공!");
+                            alert(data.msg);
                             location.href="student-list.html";
                         }else{
                             alert(data.msg);

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <script src="https://code.jquery.com/jquery-3.7.1.js"
+        integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <title>첫번째 페이지</title>
+</head>
+<style>
+    table,
+    tr,
+    td,
+    th {
+        border: 1px solid black;
+        border-collapse: collapse;
+        padding: 5px 10px;
+        text-align: center;
+    }
+</style>
+
+<body>
+    <div id="app">
+        <div v-if="!viewFlg">
+            <table>
+                <tr>
+                    <th>상품번호</th>
+                    <th>상품이름</th>
+                    <th>상품가격</th>
+                    <th>상품분류</th>
+                    <th>{{productId == '' ? '수정' : '저장'}}</th>
+                    <th>{{productId == '' ? '삭제' : '취소'}}</th>
+                </tr>
+                <template v-for="item in list">
+                    <tr v-if="item.productId != productId">
+                        <td>{{item.productId}}</td>
+                        <td><a href="javascript:;" @click="fnView(item.productId)">{{item.productName}}</a></td>
+                        <td>{{item.price}}</td>
+                        <td>{{item.category}}</td>
+                        <td><button v-if="productId == ''" @click="fnEdit(item.productId)">수정</button></td>
+                        <td><button v-if="productId == ''" @click="fnDelete(item.productId)">삭제</button></td>
+                    </tr>
+                    <tr v-else>
+                        <td>{{item.productId}}</td>
+                        <td>
+                            <input v-model="item.productName">
+                        </td>
+                        <td>
+                            <input v-model="item.price">
+                        </td>
+                        <td>
+                            <input v-model="item.category">
+                        </td>
+                        <td><button @click="fnUpdate(item)">저장</button></td>
+                        <td><button @click="productId = ''">취소</button></td>
+                    </tr>
+                </template>
+            </table>
+            <div>
+                <a href="./product-add.html"><button>추가</button></a>
+            </div>
+        </div>
+        <div v-else>
+            <div>상품번호 : {{info.productId}}</div>
+            <div>상품이름 : {{info.productName}}</div>
+            <div>상품가격 : {{info.price}}</div>
+            <div>상품분류 : {{info.category}}</div>
+            <button @click="viewFlg = false">돌아가기</button>
+        </div>
+    </div>
+</body>
+
+</html>
+<script>
+    const app = Vue.createApp({
+        data() {
+            return {
+                list: [],
+                info: {},
+                viewFlg: false,
+                productId: ""
+            };
+        },
+        methods: {
+            fnGetList() {
+                let self = this;
+                fetch("http://localhost:3000/product")
+                    .then(res => res.json())
+                    .then(data => {
+                        self.list = data.list;
+                        console.log(self.list);
+                    })
+            },
+            fnDelete(productId) {
+                let self = this;
+                if (!confirm("삭제할거?")) {
+                    return;
+                }
+                fetch("http://localhost:3000/product/" + productId, {
+                    method: "DELETE"
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        console.log(data.msg);
+                        self.fnGetList();
+                    })
+            },
+            fnView(productId) {
+                let self = this;
+                fetch("http://localhost:3000/product/" + productId)
+                    .then(res => res.json())
+                    .then(data => {
+                        self.info = data.info;
+                        console.log(self.info);
+                        self.viewFlg = true;
+                    })
+            },
+            fnEdit(productId) {
+                let self = this;
+                self.productId = productId;
+            },
+            fnUpdate(item) {
+                let self = this;
+                console.log(item);
+                fetch("http://localhost:3000/product", {
+                    method: "PUT",
+                    headers: {
+                        "Content-type": "application/json"
+                    },
+                    body: JSON.stringify(item)
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.msg == "success") {
+                            self.fnGetList();
+                            self.productId = "";
+                        }
+                    })
+            }
+        },
+        mounted() {
+            var self = this;
+            self.fnGetList();
+
+        }
+    });
+    app.mount('#app');
+</script>
